@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        /* div{
+            width: 0;
+            height: 0;
+            border-left: 100px solid transparent;
+            border-right: 100px solid transparent;
+            border-bottom: 100px solid red;
+        } */
+
+        html {
+            margin: 1.5rem 0rem;
+        }
+
+        body {
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        #cord-capture-wrapper {
+            background-color: bisque;
+            width: 80%;
+            height: 60vh;
+            margin: 2rem;
+            border-radius: 6px;
+            box-sizing: border-box;
+            display: flex;
+            margin: auto;
+            overflow: hidden;
+        }
+
+        #tag-input-container {
+            background: rgba(255, 255, 255, 0.26);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            padding: 1.25rem;
+        }
+
+        .tag-display-container {
+            background: rgba(255, 255, 255, 0.26);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            padding: 0.25rem 0.75rem;
+        }
+
+        #tag-input {
+            padding: 0.5rem;
+            border-radius: 4px;
+            border: 1px solid #cccccc;
+        }
+
+        #tag-input:focus {
+            outline: none;
+        }
+
+        #tag-input::after {
+            content: 'hello'
+        }
+
+        .button-container {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: center;
+            align-items: center;
+            margin: auto;
+        }
+
+        .btn {
+            margin: 0.75rem 0rem 0rem;
+            border: 1px solid #a5a5a55b;
+            border-radius: 4px;
+            padding: 0.25rem 1.25rem;
+            background-color: rgba(255, 255, 255, 0.438);
+        }
+
+        .btn:hover {
+            background-color: #fff;
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 2rem;
+        }
+
+        .btn-lg {
+            margin: 2rem 1rem;
+            border: 1px solid #a5a5a55b;
+            border-radius: 4px;
+            padding: 0.55rem 1.5rem;
+            background-color: rgba(224, 224, 224, 0.76);
+        }
+    </style>
+</head>
+
+<body>
+    <h2 style="text-align: center;">Tag friends using coordinates</h2>
+    <div id="cord-capture-wrapper"> </div>
+    <div class="btn-group">
+        <button id="show-all-btn" class="btn-lg">Show All Friends</button>
+        <button id="clear-btn" class="btn-lg">Clear Screen</button>
+    </div>
+
+    <script>
+        let taggedAreas = [];
+
+        (function setListeners() {
+            const wrapper = document.getElementById('cord-capture-wrapper');
+            wrapper.addEventListener('click', event => taggingFriends(event, wrapper));
+
+            const showAllBtn = document.getElementById('show-all-btn');
+            showAllBtn.addEventListener('click', event => showAllFriends(wrapper));
+
+            const clearBtn = document.getElementById('clear-btn');
+            clearBtn.addEventListener('click', event => clearScreen(wrapper));
+        })();
+
+
+        function stop(e) {
+            e.stopPropagation();
+        }
+
+        function enableDisableSaveBtn(e, btnElement) {
+            console.log('enable - disable save button called!');
+            if (e.trim().length) {
+                btnElement.setAttribute('disabled', true);
+                return;
+            }
+            btnElement.removeAttribute('disabled');
+        }
+
+        function save(e, xCord, yCord, container) {
+            console.log('Saving data...');
+            const data = document.getElementById('tag-input').value;
+            taggedAreas.push({ x: xCord, y: yCord, data: data });
+            console.log(taggedAreas);
+            container.remove();
+        }
+
+        function cancel(e, container) {
+            console.log('event fired');
+            container.remove();
+        }
+
+        function taggingFriends(event, wrapper) {
+            console.log(event.clientX, event.clientY);
+            let xCord = event.clientX;
+            let yCord = event.clientY;
+
+            const inputHTML = `<div id='tag-input-container'>
+                                    <input aria-label='Tag Friends' id='tag-input' type='text'/>
+                                    <div id='button-container'>
+                                        <button class="btn save"> &#10004 </button>
+                                        <button class="btn cancel"> &#10006 </button>
+                                    </div>
+                                </div>`;
+            wrapper.innerHTML = inputHTML;
+            const tagInputContainer = document.getElementById('tag-input-container');
+            tagInputContainer.style.cssText = `z-index:99999`;
+            tagInputContainer.addEventListener('click', e => stop(e));
+
+            const saveButton = document.getElementsByClassName('save')[0];
+            const cancelButton = document.getElementsByClassName('cancel')[0];
+
+            //Setting Event Listners
+            const tagInputElement = document.getElementById('tag-input');
+            tagInputElement.addEventListener('onchange', e => enableDisableSaveBtn(e, saveButton));
+
+
+            saveButton?.addEventListener('click', e => save(e, event.clientX, event.clientY, tagInputContainer));
+            cancelButton?.addEventListener('click', e => cancel(e, tagInputContainer));
+            tagInputContainer.style.cssText = `position:absolute;
+                                                left:${xCord}px;
+                                                top:${yCord}px;`;
+        }
+
+        function showAllFriends(wrapper) {
+            if (taggedAreas.length == 0) {
+                wrapper.textContent = "No Data Available";
+                wrapper.style.cssText = `display: flex;
+                                         justify-content: center;
+                                         align-items: center;`;
+                setTimeout(() => {
+                    wrapper.textContent = '';
+                    wrapper.style.cssText = '';
+                }, 2000);
+                return;
+            }
+
+            for (let itr = 0; itr < taggedAreas.length; itr++) {
+                var divElement = document.createElement('div');
+                var pElement = document.createElement('p');
+
+                divElement.classList.add('tag-display-container');
+                divElement.id = taggedAreas[itr].data;
+                pElement.innerHTML = taggedAreas[itr].data;
+
+                //Attach 'p' element to div and div to wrapper
+                divElement.appendChild(pElement);
+                wrapper.appendChild(divElement);
+
+                //Add Stylings to the display container
+                const tagDisplayContainer = document.getElementById(taggedAreas[itr].data);
+                tagDisplayContainer.style.cssText = `position:absolute;
+                                                         left:${taggedAreas[itr].x}px;
+                                                         top:${taggedAreas[itr].y}px;
+                                                        `;
+                tagDisplayContainer.addEventListener('click', e => stop(e));
+            };
+        }
+
+        function clearScreen(wrapper) {
+            wrapper.innerHTML = '';
+        }
+
+    </script>
+</body>
+
+</html>
+
+
+<!-- TODO :
+1. Add Hover and View Functionality
+2. Apply Validation - Block adding tags to already tagged locations.
+3. Implement Pixel Proximity Based Solution. If we hover over a certain
+   proximity of tagged pixels, we will see the tagged name. -->
